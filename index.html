@@ -1,0 +1,1325 @@
+﻿<!DOCTYPE html>
+<html lang="hu" data-theme="light" data-font-size="medium">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <title>Geoládák 2.0</title>
+  <meta name="theme-color" content="#2a6b4f" />
+  <link rel="preconnect" href="https://unpkg.com">
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""/>
+  <style>
+    :root, [data-theme="light"] {
+      --text-xs: clamp(0.75rem, 0.7rem + 0.25vw, 0.875rem);
+      --text-sm: clamp(0.875rem, 0.8rem + 0.35vw, 1rem);
+      --text-base: clamp(1rem, 0.95rem + 0.25vw, 1.125rem);
+      --text-lg: clamp(1.125rem, 1rem + 0.75vw, 1.5rem);
+      --text-xl: clamp(1.5rem, 1.2rem + 1.25vw, 2rem);
+      --space-1: 0.25rem; --space-2: 0.5rem; --space-3: 0.75rem; --space-4: 1rem; --space-5: 1.25rem; --space-6: 1.5rem; --space-8: 2rem; --space-10: 2.5rem;
+      --radius-sm: 0.5rem; --radius-md: 0.85rem; --radius-lg: 1.1rem; --radius-xl: 1.45rem; --radius-full: 9999px;
+      --color-bg: #edf4ef;
+      --color-surface: #f8fcf9;
+      --color-surface-2: #ffffff;
+      --color-surface-offset: #dbe8de;
+      --color-border: #c8d8cb;
+      --color-divider: #d7e2d9;
+      --color-text: #1d2c22;
+      --color-text-muted: #617465;
+      --color-text-faint: #8c9c90;
+      --color-primary: #2a6b4f;
+      --color-primary-hover: #1f5b42;
+      --color-primary-highlight: #d9ece1;
+      --color-accent: #4c8f6a;
+      --color-orange: #ce7a1f;
+      --color-error: #ad3a59;
+      --shadow-sm: 0 1px 2px rgba(20, 44, 27, 0.08);
+      --shadow-md: 0 8px 26px rgba(20, 44, 27, 0.12);
+      --shadow-lg: 0 18px 46px rgba(20, 44, 27, 0.16);
+      --transition-interactive: 180ms cubic-bezier(0.16, 1, 0.3, 1);
+      --font-scale: 1;
+    }
+    [data-theme="dark"] {
+      --color-bg: #121914;
+      --color-surface: #18201a;
+      --color-surface-2: #1f2a22;
+      --color-surface-offset: #223127;
+      --color-border: #334439;
+      --color-divider: #2a362d;
+      --color-text: #edf4ef;
+      --color-text-muted: #b8c4bb;
+      --color-text-faint: #7f9184;
+      --color-primary: #73b28a;
+      --color-primary-hover: #89c59e;
+      --color-primary-highlight: #1f3527;
+      --color-accent: #93d6ad;
+      --color-orange: #f0a34f;
+      --color-error: #d76b87;
+      --shadow-sm: 0 1px 2px rgba(0,0,0,.22);
+      --shadow-md: 0 10px 30px rgba(0,0,0,.3);
+      --shadow-lg: 0 18px 48px rgba(0,0,0,.4);
+    }
+    [data-font-size="small"] { --font-scale: .93; }
+    [data-font-size="medium"] { --font-scale: 1; }
+    [data-font-size="large"] { --font-scale: 1.08; }
+    * ,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+    html{-webkit-text-size-adjust:none;text-size-adjust:none}
+    body{
+      min-height:100dvh;
+      font-family:Inter,system-ui,sans-serif;
+      font-size:calc(var(--text-base) * var(--font-scale));
+      color:var(--color-text);
+      background:linear-gradient(180deg,#bfd4c4 0%,var(--color-bg) 18%,var(--color-bg) 100%);
+      display:flex;
+      justify-content:center;
+      padding:12px;
+      overflow:auto;              
+    }
+    button,input,select,textarea{font:inherit;color:inherit}
+    button{border:none;background:none}
+    img{display:block;max-width:100%;height:auto}
+    .phone{
+      width:min(100%,430px);
+      height:calc(100dvh - 24px);
+      background:var(--color-surface);
+      border:1px solid var(--color-border);
+      border-radius:30px;
+      overflow:hidden;
+      box-shadow:var(--shadow-lg);
+      position:relative;              /* A telefon keret lesz a referencia az alsó menünek */
+      display:flex;
+      flex-direction:column;          /* Felső sávok + tartalom + alsó menü egymás alatt */
+    }
+    .hidden{display:none !important}
+    .statusbar{height:30px;padding:0 14px;background:var(--color-primary);color:#fff;display:flex;align-items:center;justify-content:space-between;font-size:12px;letter-spacing:.04em}
+    .topbar{padding:14px 16px;background:var(--color-primary);color:#fff;display:flex;align-items:center;gap:12px}
+    .topbar h1{font-size:var(--text-lg);line-height:1.1}
+    .topbar p{font-size:var(--text-xs);opacity:.82}
+    .grow{flex:1}
+    .icon-btn{width:44px;height:44px;border-radius:14px;background:rgba(255,255,255,.14);display:grid;place-items:center;color:#fff}
+    .app-pages{ 
+      flex:1 1 auto;                  /* Vegye fel a maradék magasságot a telefonon belül */
+      padding:16px 16px 92px;         /* Eredeti padding, alul helyet hagy a menünek */
+      display:grid;
+      gap:16px;
+      overflow-y:auto; 
+    }
+    .page{display:none;gap:16px}
+    .page.active{display:grid}
+    .card{background:var(--color-surface-2);border:1px solid var(--color-border);border-radius:var(--radius-xl);padding:16px;box-shadow:var(--shadow-sm)}
+    .section-head{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:12px}
+    .section-head h2{font-size:var(--text-lg)}
+    .muted{color:var(--color-text-muted);font-size:var(--text-sm)}
+    .chip{display:inline-flex;align-items:center;gap:6px;padding:6px 10px;border-radius:999px;background:var(--color-primary-highlight);color:var(--color-primary);font-size:12px;font-weight:700}
+    .search-row,.toolbar-row{display:grid;grid-template-columns:1fr auto auto;gap:10px}
+    .search-row.compact{grid-template-columns:auto 1fr auto}
+    .icon-search{width:46px;height:46px;border-radius:14px;background:rgba(248,252,249,.95);border:1px solid var(--color-border);box-shadow:var(--shadow-sm)}
+    [data-theme="dark"] .icon-search{background:rgba(24,32,26,.95)}
+    .search-panel{display:grid;grid-template-columns:1fr auto;gap:10px}
+    .search-row input,.toolbar-row select,.settings-select,.login input{
+      background:var(--color-surface-2);border:1px solid var(--color-border);border-radius:14px;padding:13px 14px;outline:none;
+    }
+    .pill-btn,.primary-btn,.secondary-btn{
+      min-height:46px;padding:0 14px;border-radius:14px;display:inline-flex;align-items:center;justify-content:center;gap:8px;transition:all var(--transition-interactive)
+    }
+    .primary-btn{background:var(--color-primary);color:#fff}
+    .secondary-btn{background:var(--color-primary-highlight);color:var(--color-primary)}
+    .pill-btn{background:var(--color-surface-offset);color:var(--color-text)}
+    .map-wrap{position:relative;height:390px;border-radius:22px;overflow:hidden;border:1px solid var(--color-border)}
+    #map{height:100%;width:100%}
+    .map-overlay{position:absolute;left:12px;right:12px;top:12px;display:grid;gap:10px;z-index:500}
+    .filter-row{display:flex;gap:8px;overflow:auto;padding-bottom:2px;scrollbar-width:none;-ms-overflow-style:none}
+    .filter-row::-webkit-scrollbar{display:none}
+    .filter-tag{white-space:nowrap;padding:8px 10px;border-radius:999px;background:rgba(248,252,249,.9);border:1px solid var(--color-border);font-size:12px}
+    [data-theme="dark"] .filter-tag{background:rgba(24,32,26,.92)}
+    .filter-tag{
+      white-space:nowrap;
+      padding:8px 10px;
+      border-radius:999px;
+      background:rgba(248,252,249,.9);
+      border:1px solid var(--color-border);
+      font-size:12px;
+      color:var(--color-text);
+      font-weight:600;
+      transition:
+        background var(--transition-interactive),
+        color var(--transition-interactive),
+        border-color var(--transition-interactive),
+        box-shadow var(--transition-interactive),
+        transform var(--transition-interactive);
+    }
+
+    .filter-tag.active{
+      background:var(--color-primary);
+      color:#fff;
+      border-color:var(--color-primary);
+      box-shadow:0 6px 16px rgba(42,107,79,.22);
+      font-weight:700;
+    }
+
+    .filter-tag:active{
+      transform:translateY(1px);
+    }
+
+    .filter-tag:focus-visible{
+      outline:2px solid var(--color-primary);
+      outline-offset:2px;
+    }
+        [data-theme="dark"] .filter-tag{
+      background:rgba(24,32,26,.92);
+      color:var(--color-text);
+      border-color:var(--color-border);
+    }
+
+    [data-theme="dark"] .filter-tag.active{
+      background:var(--color-primary);
+      color:#102016;
+      border-color:var(--color-primary);
+      box-shadow:0 8px 18px rgba(0,0,0,.28);
+}
+    .gps-controls{position:absolute;right:12px;bottom:12px;display:grid;gap:8px;z-index:500}
+    .gps-controls button{width:48px;height:48px;border-radius:16px;background:rgba(248,252,249,.95);border:1px solid var(--color-border);box-shadow:var(--shadow-md)}
+    [data-theme="dark"] .gps-controls button{background:rgba(24,32,26,.95)}
+    .legend{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+    .legend .item{background:var(--color-surface-offset);border-radius:16px;padding:12px}
+    .legend b{display:block;margin-bottom:4px;font-size:var(--text-sm)}
+    .dot{display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:6px}
+    .list{display:grid;gap:10px}
+    .row{display:grid;grid-template-columns:auto 1fr auto;gap:12px;align-items:center;padding:12px 0;border-bottom:1px solid var(--color-divider)}
+    .row.log-entry{grid-template-columns:auto 1fr;align-items:start;cursor:pointer}
+    .row-main{display:grid;gap:8px}
+    .row-actions{display:flex;gap:8px;flex-wrap:wrap}
+    .row:last-child{border-bottom:none;padding-bottom:0}
+    .badge{width:44px;height:44px;border-radius:14px;display:grid;place-items:center;font-size:12px;font-weight:800;color:#fff}
+    .badge.easy{background:#4c8f6a}.badge.mid{background:#ce7a1f}.badge.hard{background:#ad3a59}.badge.place{background:#2a6b4f}
+    .row strong{display:block;font-size:var(--text-sm);margin-bottom:2px}
+    .row span{display:block;font-size:12px;color:var(--color-text-muted)}
+    .dist{font-size:12px;color:var(--color-primary);font-weight:700}
+    .segmented{display:grid;grid-template-columns:1fr 1fr;gap:8px;background:var(--color-surface-offset);padding:6px;border-radius:16px}
+    .segmented button{min-height:40px;border-radius:12px}
+    .segmented button.active{background:var(--color-surface-2);box-shadow:var(--shadow-sm)}
+    .detail-hero{height:180px;border-radius:20px;background:linear-gradient(145deg,#9fc1ad,#d9e9dd);display:flex;align-items:flex-end;padding:16px;color:#183323}
+    .detail-grid{display:grid;gap:10px}
+    .action-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+    .log-photo{height:74px;border-radius:16px;background:linear-gradient(135deg,#d9e7dd,#b8d1c2)}
+    .settings-group{display:grid;gap:10px}
+    .setting-row{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px 0;border-bottom:1px solid var(--color-divider)}
+    .setting-row:last-child{border-bottom:none}
+    .switch{width:50px;height:30px;border-radius:999px;background:var(--color-primary-highlight);position:relative;cursor:pointer}
+    .switch::after{content:'';position:absolute;width:22px;height:22px;border-radius:50%;top:4px;left:4px;background:var(--color-surface-2);box-shadow:var(--shadow-sm);transition:all var(--transition-interactive)}
+    .switch.on{background:var(--color-primary)}
+    .switch.on::after{left:24px}
+    .bottom-nav{
+          position:absolute;              /* A telefonon belül, nem a teljes oldalon */
+          left:0;
+          right:0;
+          bottom:0;
+          border-top:1px solid var(--color-border);
+          background:rgba(248,252,249,.96);
+          display:grid;
+          grid-template-columns:repeat(5,1fr);
+          padding:8px 8px calc(8px + env(safe-area-inset-bottom));
+          backdrop-filter:blur(10px);
+          z-index:10;}
+    [data-theme="dark"] .bottom-nav{background:rgba(24,32,26,.96)}
+    .nav-btn{min-height:60px;border-radius:16px;display:grid;place-items:center;gap:4px;color:var(--color-text-muted);font-size:11px}
+    .nav-btn.active{background:var(--color-primary-highlight);color:var(--color-primary);font-weight:700}
+    .login-screen{position:absolute;inset:0;background:linear-gradient(180deg,#2f6c51 0%,#193526 100%);color:#fff;z-index:1000;display:grid;place-items:center;padding:24px}
+    .login{
+      width:100%;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.14);backdrop-filter:blur(10px);border-radius:28px;padding:22px;display:grid;gap:14px;box-shadow:0 18px 40px rgba(0,0,0,.2)
+    }
+    .logo{width:58px;height:58px;border-radius:18px;background:rgba(255,255,255,.14);display:grid;place-items:center;font-size:26px}
+    .login h2{font-size:var(--text-xl)}
+    .login p{color:rgba(255,255,255,.82);font-size:var(--text-sm)}
+    .login input{background:rgba(255,255,255,.14);border-color:rgba(255,255,255,.18);color:#fff}
+    .login input::placeholder{color:rgba(255,255,255,.64)}
+    .login .primary-btn{background:#fff;color:#214a35}
+    .helper{font-size:12px;color:rgba(255,255,255,.72)}
+    .toast{position:absolute;left:50%;bottom:92px;transform:translateX(-50%);background:var(--color-text);color:var(--color-surface-2);padding:10px 14px;border-radius:999px;font-size:12px;box-shadow:var(--shadow-md);opacity:0;pointer-events:none;transition:opacity .2s}
+    .toast.show{opacity:1}
+    .compass-wrap{
+      display:grid;
+      place-items:center;
+      padding:8px 0 4px;
+    }
+
+    .compass-ring{
+      position:relative;
+      width:220px;
+      height:220px;
+      border-radius:50%;
+      border:10px solid var(--color-surface-offset);
+      background:
+        radial-gradient(circle at center, var(--color-surface-2) 0 42%, var(--color-surface-offset) 43% 100%);
+      box-shadow:var(--shadow-md);
+    }
+
+    .compass-ring::before{
+      content:'É';
+      position:absolute;
+      top:10px;
+      left:50%;
+      transform:translateX(-50%);
+      font-size:14px;
+      font-weight:800;
+      color:var(--color-primary);
+    }
+
+    .compass-needle{
+      position:absolute;
+      left:50%;
+      top:50%;
+      width:8px;
+      height:88px;
+      transform:translate(-50%,-85%) rotate(0deg);
+      transform-origin:50% 85%;
+      border-radius:999px;
+      background:linear-gradient(180deg, var(--color-error) 0 50%, var(--color-primary) 50% 100%);
+      box-shadow:var(--shadow-sm);
+      transition:transform 220ms ease;
+    }
+
+    .compass-center{
+      position:absolute;
+      left:50%;
+      top:50%;
+      width:22px;
+      height:22px;
+      border-radius:50%;
+      background:var(--color-surface-2);
+      border:4px solid var(--color-primary);
+      transform:translate(-50%,-50%);
+    }
+  </style>
+</head>
+<body>
+  <div class="phone">
+    <section class="login-screen" id="loginScreen">
+      <div class="login">
+        <div class="logo">🧭</div>
+        <div>
+          <h2>Geoládák 2.0</h2>
+          <p>Túrázós, modern webapp amely valódi térképpel és hasznos funkciókkal rendelkezik.</p>
+        </div>
+        <input id="username" type="text" placeholder="Felhasználónév vagy e-mail" />
+        <input id="password" type="password" placeholder="Jelszó" />
+        <button class="primary-btn" id="loginBtn">Belépés</button>
+        <div class="helper">A belépésnél figyelj az adataid helyes megadására!</div>
+      </div>
+    </section>
+
+    <div class="statusbar"><span>11:29</span><span>4G • GPS • 82%</span></div>
+    <header class="topbar">
+      <div>
+        <p>Geoládák 2.0</p>
+        <h1 id="pageTitle">Térkép</h1>
+      </div>
+      <div class="grow"></div>
+      <button class="icon-btn" id="quickTheme" aria-label="Téma váltása">◐</button>
+    </header>
+
+    <main class="app-pages">
+      <section class="page active" id="page-map">
+        <div class="map-wrap">
+          <div class="map-overlay">
+            <div class="search-row compact">
+              <button class="icon-search" id="searchToggle" aria-label="Kereső megnyitása">🔍</button>
+              <button class="secondary-btn" id="nearBtn">Közelemben</button>
+              <button class="pill-btn" id="followBtn">GPS</button>
+            </div>
+            <div class="search-panel hidden" id="searchPanel">
+              <input id="mapSearch" type="text" placeholder="Keresés ládanévre vagy helyre" />
+              <button class="pill-btn" id="closeSearchBtn">Bezár</button>
+            </div>
+            <div class="filter-row">
+              <button class="filter-tag" data-filter="all">Összes</button>
+              <button class="filter-tag" data-filter="easy">Könnyű</button>
+              <button class="filter-tag" data-filter="mid">Közepes</button>
+              <button class="filter-tag" data-filter="hard">Nehéz</button>
+              <button class="filter-tag" data-filter="places">Saját helyek</button>
+            </div>
+          </div>
+          <div id="map"></div>
+          <div class="gps-controls">
+            <button id="locateBtn" aria-label="Saját hely">⌖</button>
+            <button id="filterBtn" aria-label="Szűrők">☷</button>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="section-head"><h2>Térképes jelölések</h2><span class="chip">mintaadat</span></div>
+          <div class="legend">
+            <div class="item"><b><span class="dot" style="background:#4c8f6a"></span>Könnyű</b><span class="muted">egyszerű láda</span></div>
+            <div class="item"><b><span class="dot" style="background:#ce7a1f"></span>Közepes</b><span class="muted">átlagos terep</span></div>
+            <div class="item"><b><span class="dot" style="background:#ad3a59"></span>Nehéz</b><span class="muted">haladó pont</span></div>
+          </div>
+        </div>
+      </section>
+
+      <section class="page" id="page-caches">
+        <div class="card">
+          <div class="section-head"><h2>Ládák</h2><span class="chip" id="viewModeChip">Lista nézet</span></div>
+          <div class="toolbar-row compact" style="margin-bottom:12px;">
+            <button class="icon-search" id="cacheSearchToggle" aria-label="Láda kereső megnyitása">🔍</button>
+            <select id="sortSelect"><option value="distance">Távolság</option><option value="name">Név</option><option value="date">Dátum</option><option value="difficulty">Nehézség</option></select>
+            <button class="pill-btn" id="sortDirectionBtn">↕</button>
+            <button class="pill-btn" id="toggleViewBtn">Nézet</button>
+          </div>
+          <div class="search-panel hidden" id="cacheSearchPanel" style="margin-bottom:12px">
+            <input id="cacheSearch" type="text" placeholder="Keresés ládák között" />
+            <button class="pill-btn" id="closeCacheSearchBtn">Bezár</button>
+          </div>
+          <div class="list" id="cacheList"></div>
+        </div>
+      </section>
+
+      <section class="page" id="page-logs">
+        <div class="card">
+          <div class="section-head"><h2>Logjaim</h2><span class="chip">fotóval</span></div>
+          <div class="list" id="logList"></div>
+          <button class="primary-btn" style="width:100%;margin-top:12px" id="newLogBtn">Új log írása</button>
+        </div>
+      </section>
+
+      <section class="page" id="page-places">
+        <div class="card">
+          <div class="section-head"><h2>Saját helyek</h2><span class="chip">menthető pontok</span></div>
+          <div class="list" id="placeList"></div>
+          <div class="action-grid" style="margin-top:12px">
+            <button class="secondary-btn" id="saveGpsPlaceBtn">Mentés GPS alapján</button>
+            <button class="pill-btn" id="addManualPlaceBtn">Kézi koordináta</button>
+          </div>
+        </div>
+      </section>
+
+      <section class="page" id="page-place-editor">
+        <div class="card">
+          <div class="section-head"><h2>Saját hely szerkesztése</h2><span class="chip">menthető pont</span></div>
+          <div class="settings-group">
+            <div>
+              <strong>Név</strong>
+              <input id="placeNameInput" type="text" placeholder="Pl. Kedvenc indulópont" style="margin-top:8px" />
+            </div>
+            <div>
+              <strong>Megjegyzés</strong>
+              <textarea id="placeNoteInput" rows="4" style="width:100%;margin-top:8px;background:var(--color-surface-2);border:1px solid var(--color-border);border-radius:14px;padding:13px 14px;outline:none" placeholder="Rövid megjegyzés a helyhez"></textarea>
+            </div>
+            <div>
+              <strong>Koordináta</strong>
+              <input id="placeCoordsInput" type="text" placeholder="47.585, 18.399" style="margin-top:8px" />
+            </div>
+            <div class="action-grid">
+              <button class="primary-btn" id="savePlaceBtn">Hely mentése</button>
+              <button class="pill-btn" id="cancelPlaceBtn">Mégse</button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="page" id="page-settings">
+        <div class="card">
+          <div class="section-head"><h2>Beállítások</h2><span class="chip">személyre szabás</span></div>
+          <div class="settings-group">
+            <div class="setting-row"><div><strong>Sötét mód</strong><div class="muted">Kapcsolható kinézet</div></div><button class="switch" id="darkSwitch"></button></div>
+            <div class="setting-row"><div><strong>GPS automatikus frissítés</strong><div class="muted">Kövesse a pozíciót térképen</div></div><button class="switch on"></button></div>
+            <div class="setting-row"><div><strong>Offline térkép előkészítés</strong><div class="muted">Letöltés csak Wi-fi kapcsolat mellett.</div></div><button class="switch"></button></div>
+            <div class="setting-row"><div><strong>Értesítések</strong><div class="muted">Értesítések csak Wi-fi kapcsolat mellett.</div></div><button class="switch on"></button></div>
+            <div class="setting-row"><div><strong>Betűméret</strong><div class="muted">Kicsi / közepes / nagy</div></div><select id="fontSizeSelect" class="settings-select"><option value="small">Kicsi</option><option value="medium" selected>Közepes</option><option value="large">Nagy</option></select></div>
+            <div class="setting-row"><div><strong>Láda nézet</strong><div class="muted">Lista vagy kártyás megjelenés</div></div><select id="cacheViewSelect" class="settings-select"><option value="list" selected>Lista</option><option value="card">Kártya</option></select></div>
+            <div class="setting-row"><div><strong>Fiók / szinkron</strong><div class="muted">Saját felhasználós belépés aktív</div></div><span class="chip">Aktív</span></div>
+            <div class="setting-row"><div><strong>Kilépés</strong><div class="muted">Vissza a belépő képernyőre</div></div><button class="secondary-btn" id="logoutBtn">Kijelentkezés</button></div>
+          </div>
+        </div>
+      </section>
+
+      <section class="page" id="page-detail">
+        <div class="card">
+          <div class="detail-hero"><div><div class="chip" id="detailDiffChip">Közepes</div><h2 id="detailTitle" style="margin-top:10px;font-size:var(--text-xl)">GCMINTA – Turul kör</h2></div></div>
+          <div class="detail-grid" style="margin-top:14px">
+            <div><strong>Leírás</strong><p class="muted" id="detailDesc">Panorámás pont, könnyen elérhető útvonallal és rövid mászással.</p></div>
+            <div><strong>Koordináta</strong><p class="muted" id="detailCoord">47.5850, 18.3980</p></div>
+            <div><strong>Státusz</strong><p class="muted" id="detailStatus">Aktív • 1.2 km • 4 log</p></div>
+            <div><strong>Képek</strong><div class="action-grid"><div class="log-photo"></div><div class="log-photo"></div></div></div>
+            <div><strong>Utolsó logok</strong><div class="list" id="detailLogs"></div></div>
+          </div>
+          <div class="action-grid" style="margin-top:14px">
+            <button class="primary-btn" id="foundBtn">Megtaláltam</button>
+            <button class="secondary-btn" id="saveLaterBtn">Elmentem későbbre</button>
+            <button class="pill-btn" id="navigateBtn">Navigáció</button>
+            <button class="pill-btn" id="allCacheLogsBtn">Logok</button>
+            <button class="pill-btn" id="writeLogBtn">Új log</button>
+            <button class="pill-btn" id="backToListBtn">Vissza</button>
+          </div>
+        </div>
+      </section>
+      <section class="page" id="page-navigation">
+          <div class="card">
+              <div class="section-head">
+                  <h2>Iránytűs navigáció</h2>
+                  <span class="chip" id="navTargetChip">Láda</span>
+              </div>
+
+              <div class="compass-wrap">
+                  <div class="compass-ring">
+                      <div class="compass-needle" id="compassNeedle"></div>
+                      <div class="compass-center"></div>
+                  </div>
+              </div>
+
+              <div class="detail-grid" style="margin-top:14px">
+                  <div><strong>Célpont</strong><p class="muted" id="navTargetName">–</p></div>
+                  <div><strong>Irány</strong><p class="muted" id="navBearingText">–</p></div>
+                  <div><strong>Távolság</strong><p class="muted" id="navDistanceText">–</p></div>
+                  <div><strong>GPS pontosság</strong><p class="muted" id="navAccuracyText">–</p></div>
+                  <div><strong>Aktuális pozíció</strong><p class="muted" id="navCurrentCoords">–</p></div>
+                  <div><strong>Cél koordináta</strong><p class="muted" id="navTargetCoords">–</p></div>
+              </div>
+
+              <div class="action-grid" style="margin-top:14px">
+                  <button class="primary-btn" id="refreshNavBtn">Pozíció frissítése</button>
+                  <button class="pill-btn" id="backFromNavBtn">Vissza az adatlapra</button>
+              </div>
+          </div>
+      </section>
+
+      <section class="page" id="page-cache-logs">
+        <div class="card">
+          <div class="section-head"><h2>Összes log</h2><span class="chip">Összes log</span></div>
+          <div class="list" id="cacheLogsList"></div>
+          <button class="pill-btn" id="backToDetailBtn" style="width:100%;margin-top:12px">Vissza az adatlapra</button>
+        </div>
+      </section>
+
+      <section class="page" id="page-log-detail">
+        <div class="card">
+          <div class="section-head"><h2>Log részletei</h2><span class="chip">megnyitható</span></div>
+          <div class="detail-grid">
+            <div><strong>Láda</strong><p class="muted" id="logDetailName">Turul kör</p></div>
+            <div><strong>Dátum</strong><p class="muted" id="logDetailDate">2026-06-25</p></div>
+            <div><strong>Státusz</strong><p class="muted" id="logDetailStatus">Megjegyzés</p></div>
+            <div><strong>Log szövege</strong><p class="muted" id="logDetailText">Itt látszik majd, mit írtál korábban a logban.</p></div>
+            <div><strong>Fotó</strong><div class="log-photo"></div></div>
+          </div>
+          <div class="action-grid" style="margin-top:14px">
+            <button class="primary-btn" id="editLogBtn">Újra megnyitás íráshoz</button>
+            <button class="pill-btn" id="backToLogsBtn">Vissza a logokhoz</button>
+          </div>
+        </div>
+      </section>
+
+      <section class="page" id="page-write-log">
+        <div class="card">
+          <div class="section-head"><h2>Új log írása</h2><span class="chip">fotó csatolás minta</span></div>
+          <div class="settings-group">
+            <div>
+              <strong>Láda</strong>
+              <select id="logCacheSelect" class="settings-select" style="width:100%;margin-top:8px"></select>
+            </div>
+            <div>
+              <strong>Státusz</strong>
+              <select id="logStatusSelect" class="settings-select" style="width:100%;margin-top:8px">
+                <option>Megtaláltam</option>
+                <option>Nem találtam</option>
+                <option>Megjegyzés</option>
+                <option>Fotós log</option>
+              </select>
+            </div>
+            <div>
+              <strong>Megjegyzés</strong>
+              <textarea id="logMessage" rows="5" style="width:100%;margin-top:8px;background:var(--color-surface-2);border:1px solid var(--color-border);border-radius:14px;padding:13px 14px;outline:none" placeholder="Írd ide a log szövegét..."></textarea>
+            </div>
+            <div>
+              <strong>Fotó csatolás</strong>
+              <div class="action-grid" style="margin-top:8px">
+                <button class="secondary-btn" id="attachPhotoBtn">Fotó hozzáadása</button>
+                <div class="log-photo"></div>
+              </div>
+            </div>
+            <div class="action-grid">
+              <button class="primary-btn" id="saveLogBtn">Log mentése</button>
+              <button class="pill-btn" id="cancelLogBtn">Mégse</button>
+            </div>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <nav class="bottom-nav" aria-label="Alsó navigáció">
+      <button class="nav-btn active" data-page="map">🗺️<span>Térkép</span></button>
+      <button class="nav-btn" data-page="caches">📦<span>Ládák</span></button>
+      <button class="nav-btn" data-page="logs">📝<span>Logjaim</span></button>
+      <button class="nav-btn" data-page="places">📍<span>Helyek</span></button>
+      <button class="nav-btn" data-page="settings">⚙️<span>Beáll.</span></button>
+    </nav>
+    <div class="toast" id="toast"></div>
+  </div>
+
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+  <script>
+      const state = {
+      navigationWatchId: null,
+      deviceHeading: null,
+      gpsAccuracy: null,
+      user: null,
+      theme: 'light',
+      fontSize: 'medium',
+      cacheView: 'list',
+      activePage: 'map',
+      followGps: false,
+      currentPosition: [47.5858, 18.3982],
+      activeMapFilters: ['all'],
+      selectedCacheId: 1,
+      editingLogIndex: null,
+      sortType: 'distance',
+      sortDirection: 'asc',
+      caches: [
+        {id:1, code:'GCMINTA', name:'Turul kör', distance:'1.2 km', difficulty:'easy', difficultyRank:1, status:'Nyitott', date:'2026-06-24', coords:[47.5850,18.3980], desc:'Panorámás pont, rövid sétával.', logs:[{author:'hegyjáró83', date:'2026-06-21', status:'Megtalálva', text:'A doboz rendben, szép a kilátás.'},{author:'turaandi', date:'2026-06-15', status:'Megjegyzés', text:'Eső után csúszós lehet a szakasz.'}]},
+        {id:2, code:'GCVOLGY', name:'Völgyhíd pont', distance:'3.8 km', difficulty:'mid', difficultyRank:2, status:'Aktív', date:'2026-06-18', coords:[47.5314,18.3815], desc:'Látványos városi kilátás.', logs:[{author:'geozoli', date:'2026-06-19', status:'Megtalálva', text:'Gyors találat, forgalmas környék.'},{author:'kata_cache', date:'2026-06-12', status:'Fotós log', text:'Naplementében különösen szép.'}]},
+        {id:3, code:'GCERDO', name:'Panoráma ösvény', distance:'7.5 km', difficulty:'hard', difficultyRank:3, status:'Új', date:'2026-06-10', coords:[47.6122,18.4410], desc:'Hosszabb séta, erdős terep.', logs:[{author:'erdeifuto', date:'2026-06-11', status:'Megjegyzés', text:'Meredekebb emelkedő, de megéri.'},{author:'nyomkereso', date:'2026-06-10', status:'Megtalálva', text:'Jó állapotú láda, kevésbé frekventált hely.'}]}
+      ,
+        {id:2, code:'GCTATA01', name:'Fényes-forrás titka', difficulty:'easy', distance:'0.8 km', date:'2023-04-02', status:'Aktív', coords:[47.652,18.319], desc:'Forrásokkal és pallósorral kísért rövid séta Tata különleges vízivilágában.', logs:[{author:'turaandi', date:'2026-05-11', status:'Megtaláltam', text:'Deszkás ösvényen végig, gyerekkel is simán járható. A láda jól elrejtve a gyökerek között.'},{author:'csillaglesen', date:'2026-04-28', status:'Megtaláltam', text:'Késő délután érkeztünk, a nádas fölött szitakötők repkedtek, nagyon hangulatos hely.'}]},
+        {id:3, code:'GCESZT01', name:'Bazilika panoráma lépcső', difficulty:'mid', distance:'1.5 km', date:'2022-09-18', status:'Aktív', coords:[47.794,18.741], desc:'Rövid, de meredekebb kapaszkodó a bazilika környéki panorámapontra.', logs:[{author:'dunapartifuto', date:'2026-06-10', status:'Megtaláltam', text:'A lépcsők után a kilátás mindent megér. A láda stabilan a kőfal mellett, nehéz eltéveszteni.'},{author:'naplemente_vadasz', date:'2026-03-29', status:'Megtaláltam', text:'Naplementére értünk fel, Esztergom fényei és a híd egyszerűen brutális látvány.'}]},
+        {id:4, code:'GCRAM01', name:'Rám-szakadék létrái', difficulty:'hard', distance:'4.2 km', date:'2021-05-07', status:'Aktív', coords:[47.737,18.892], desc:'Szurdokos, létrás, vizes szakaszokkal tarkított haladó túra Dobogókő közelében.', logs:[{author:'szurdokjarok', date:'2026-05-30', status:'Megtaláltam', text:'Eső után jöttünk, a létráknál nagyon kellett figyelni, de a szurdok látványa elképesztő.'},{author:'csapat_trail', date:'2026-04-14', status:'Megtaláltam', text:'Csapatépítő túra volt, mindenki sáros lett, de mindenki mosolygott. A láda masszívan rögzítve.'}]},
+        {id:5, code:'GCTATA02', name:'Öreg-tó parti kör', difficulty:'easy', distance:'2.1 km', date:'2023-06-21', status:'Aktív', coords:[47.651,18.325], desc:'Könnyű tóparti kör Tata legismertebb sétányain, madarakkal és nyílt panorámával.', logs:[{author:'tojaro', date:'2026-06-12', status:'Megtaláltam', text:'Reggeli fényben gyönyörű volt az Öreg-tó, a doboz száraz és könnyen elérhető.'},{author:'madarleso', date:'2026-05-02', status:'Megtaláltam', text:'Rengeteg madár volt a vízen, a séta rövid, de nagyon látványos.'}]},
+        {id:6, code:'GCGERCSE1', name:'Gerecsei kövek nyoma', difficulty:'mid', distance:'3.6 km', date:'2022-11-05', status:'Aktív', coords:[47.619,18.534], desc:'Erdei emelkedőkkel és sziklás kilátóponttal tarkított gerecsei útvonal.', logs:[{author:'hegyiovi', date:'2026-06-08', status:'Megtaláltam', text:'Az utolsó emelkedő megdolgoztatott, de a fennsíkról szépen nyílt a táj.'},{author:'erdeiuton', date:'2026-04-19', status:'Megtaláltam', text:'Csendes szakasz, kevés emberrel, pont olyan, amilyet egy vasárnapi túrától várok.'}]},
+        {id:7, code:'GCVERTES1', name:'Vértes peremi csend', difficulty:'easy', distance:'2.4 km', date:'2023-02-14', status:'Aktív', coords:[47.503,18.412], desc:'Lankás erdei ösvény a megye déli peremén, tisztásokkal és rövid pihenőpontokkal.', logs:[{author:'csendeslepes', date:'2026-06-03', status:'Megtaláltam', text:'Szellős, nyugodt útvonal, alig találkoztunk valakivel. A rejtek kulturált.'},{author:'bokorles', date:'2026-05-01', status:'Megtaláltam', text:'A tisztásoknál szép fények voltak, kellemes esti séta lett belőle.'}]},
+        {id:8, code:'GCKOMAR01', name:'Monostori-part emlékpont', difficulty:'easy', distance:'1.7 km', date:'2021-08-22', status:'Aktív', coords:[47.743,18.121], desc:'Duna-parti séta Komárom környékén, erődhangulattal és nyitott folyóparti nézetekkel.', logs:[{author:'folyoparti', date:'2026-06-09', status:'Megtaláltam', text:'Szeles volt a part, de nagyon jó hangulata van a környéknek. A láda könnyen előkerült.'},{author:'hidasnezelo', date:'2026-03-17', status:'Megtaláltam', text:'A vízpart és a történelmi háttér együtt különösen jó kombináció volt.'}]},
+        {id:9, code:'GCPILISKE', name:'Pilis peremi pihenő', difficulty:'mid', distance:'3.1 km', date:'2022-10-08', status:'Aktív', coords:[47.721,18.781], desc:'Erdős kapaszkodó után nyíló pihenőhely a Pilis nyugati szélén.', logs:[{author:'osziavaron', date:'2026-05-26', status:'Megtaláltam', text:'Az avar illata és a csend miatt már önmagában megérte feljönni ide.'},{author:'turabot', date:'2026-04-06', status:'Megtaláltam', text:'Nem túl hosszú, de kellemesen változatos szakasz, a rejtek logikus helyen van.'}]},
+        {id:10, code:'GCBOKOD01', name:'Lebegő falu ösvénye', difficulty:'easy', distance:'1.3 km', date:'2023-07-09', status:'Aktív', coords:[47.492,18.248], desc:'Rövid kör a vízpart közelében, különleges stégházas hangulattal.', logs:[{author:'vizitukor', date:'2026-06-11', status:'Megtaláltam', text:'A vízfelület tükröződése gyönyörű volt, fotós szemmel is hálás helyszín.'},{author:'partiseta', date:'2026-05-07', status:'Megtaláltam', text:'Rövid, könnyű útvonal, de nagyon karakteres környezet, jó kis minta láda.'}]},
+        {id:11, code:'GCTURUL02', name:'Turul alatti ösvény', difficulty:'mid', distance:'2.0 km', date:'2022-04-30', status:'Aktív', coords:[47.586,18.394], desc:'A tatabányai Turul környéki ösvények egyik nyugodtabb, kevésbé járt ága.', logs:[{author:'kilatasvadasz', date:'2026-06-13', status:'Megtaláltam', text:'A fő kilátóponttól kicsit arrébb már sokkal csendesebb, jó volt erre kerülni.'},{author:'oregbakancs', date:'2026-04-21', status:'Megtaláltam', text:'Gyors délutáni kör lett belőle, a rejtek korrekt, a panoráma továbbra is erős.'}]},
+        {id:12, code:'GCVESZ01', name:'Bakonyi ködfolt', difficulty:'mid', distance:'3.4 km', date:'2022-09-24', status:'Aktív', coords:[47.263,17.759], desc:'Bakonyi erdei útvonal puha talajjal, mohás kövekkel és csendes fenyvesekkel.', logs:[{author:'fenyjaro', date:'2026-06-14', status:'Megtaláltam', text:'Reggeli ködben mentünk, ettől még jobb hangulata lett az egész útnak.'},{author:'mohalepes', date:'2026-05-10', status:'Megtaláltam', text:'A rejtek szép helyen van, az erdő pedig végig nyugodt és árnyas.'}]},
+        {id:13, code:'GCVESZ02', name:'Káli-medence szélfutás', difficulty:'easy', distance:'2.2 km', date:'2023-05-01', status:'Aktív', coords:[46.913,17.628], desc:'Könnyű séta a Káli-medence peremén, köves ösvénnyel és nyitott mezőkkel.', logs:[{author:'szelfogo', date:'2026-06-06', status:'Megtaláltam', text:'A táj nagyon nyitott, messzire el lehet látni, közben végig könnyű maradt az út.'},{author:'levendulas', date:'2026-04-30', status:'Megtaláltam', text:'Rövid kirándulásnak tökéletes, a környéknek különösen jó a hangulata.'}]},
+        {id:14, code:'GCVESZ03', name:'Balaton-felvidéki kőkapu', difficulty:'mid', distance:'4.1 km', date:'2021-10-16', status:'Aktív', coords:[46.962,17.726], desc:'Kövesebb emelkedő és egy természetes sziklakapu a Balaton-felvidék csendesebb oldalán.', logs:[{author:'kohegyen', date:'2026-06-12', status:'Megtaláltam', text:'Az utolsó szakasz kicsit meredekebb, de a kőalakzatok miatt nagyon megéri.'},{author:'turelmesen', date:'2026-03-22', status:'Megtaláltam', text:'Széllel és nappal szemben mentünk, de a kilátás kárpótolt mindenért.'}]},
+        {id:15, code:'GCVESZ04', name:'Tapolcai peremösvény', difficulty:'easy', distance:'1.9 km', date:'2022-07-03', status:'Aktív', coords:[46.881,17.441], desc:'Könnyen járható rövid útvonal bokros-sziklás széllel és tágas panorámával.', logs:[{author:'peremseta', date:'2026-05-28', status:'Megtaláltam', text:'Gyors délutáni körnek indult, de a kilátás miatt sokkal tovább maradtunk.'},{author:'napsargas', date:'2026-04-11', status:'Megtaláltam', text:'Egyszerű megközelítés, jó rejtek és szerethető környezet.'}]},
+        {id:16, code:'GCVESZ05', name:'Kab-hegyi csendjel', difficulty:'hard', distance:'5.0 km', date:'2021-06-19', status:'Aktív', coords:[47.031,17.673], desc:'Hosszabb bakonyi kapaszkodó, sok árnyékos szakasszal és kilátó közeli zárással.', logs:[{author:'hosszutav', date:'2026-06-15', status:'Megtaláltam', text:'Szép hosszú menet volt, de végig élvezetes, a végén a magaslat külön jutalom.'},{author:'fenytorok', date:'2026-05-18', status:'Megtaláltam', text:'A fák között áttörő fények miatt az egész útvonal különleges hangulatú lett.'}]},
+        {id:17, code:'GCBORS01', name:'Hámori-tó reggeli köre', difficulty:'easy', distance:'2.6 km', date:'2022-08-13', status:'Aktív', coords:[48.097,20.623], desc:'Könnyű tóparti séta Lillafüred hangulatával, erdei visszhanggal és víztükörrel.', logs:[{author:'tofutar', date:'2026-06-14', status:'Megtaláltam', text:'Reggel még alig voltak a parton, a víz teljesen sima volt, nagyon jó hangulatú kör.'},{author:'erdeihang', date:'2026-05-03', status:'Megtaláltam', text:'Kényelmes séta, a rejtek gyorsan megvolt, közben végig szép maradt a tó látványa.'}]},
+        {id:18, code:'GCBORS02', name:'Tar-kő peremszél', difficulty:'hard', distance:'6.2 km', date:'2021-09-05', status:'Aktív', coords:[48.041,20.504], desc:'Hosszabb bükk-fennsíki út magaslati kilátással és erősebb szintemelkedéssel.', logs:[{author:'sziklapad', date:'2026-06-09', status:'Megtaláltam', text:'A fennsíkon hűvös maradt a levegő, a kilátópontnál viszont egészen messzire tisztult az ég.'},{author:'felhojaro', date:'2026-04-27', status:'Megtaláltam', text:'Nem rövid kör, de a végén a panoráma minden lépést megér.'}]},
+        {id:19, code:'GCBORS03', name:'Nagy-Milic határösvény', difficulty:'mid', distance:'4.8 km', date:'2022-06-11', status:'Aktív', coords:[48.539,21.514], desc:'Zempléni erdei túra a határ közeli magaslatokkal és csendes bükkös szakaszokkal.', logs:[{author:'hatarjaro', date:'2026-06-12', status:'Megtaláltam', text:'Igazi elvonulós útvonal, szinte végig csak az erdőt és a szelet hallottuk.'},{author:'milicfuto', date:'2026-05-15', status:'Megtaláltam', text:'Szép, tiszta jelzések, jó ritmusú emelkedők, szerethető zempléni kör lett.'}]},
+        {id:20, code:'GCBORS04', name:'Füzéri vár alatti csapás', difficulty:'mid', distance:'3.3 km', date:'2023-03-19', status:'Aktív', coords:[48.542,21.459], desc:'Várra néző erdei ösvény rövid, meredekebb részekkel és nyitott kilátásokkal.', logs:[{author:'varalatt', date:'2026-06-07', status:'Megtaláltam', text:'A vár látványa szinte végig velünk maradt, ettől különösen emlékezetes lett a túra.'},{author:'kofal', date:'2026-04-09', status:'Megtaláltam', text:'Kicsit kaptatós, de gyorsan teljesíthető, a rejtek szépen illik a helyhez.'}]},
+        {id:21, code:'GCBORS05', name:'Bükkfennsíki mészkőnyom', difficulty:'mid', distance:'4.0 km', date:'2021-11-21', status:'Aktív', coords:[48.058,20.571], desc:'Fennsíki, nyugodt erdei szakasz karsztos hangulattal és szűrt fényű tisztásokkal.', logs:[{author:'meszkojaro', date:'2026-06-16', status:'Megtaláltam', text:'A talaj és a kövek miatt végig érdekes maradt az út, nem volt egyhangú egy pillanatra sem.'},{author:'fenyfolt', date:'2026-05-08', status:'Megtaláltam', text:'Csendes, árnyas útvonal, pont az a típus, ahová szívesen visszajön az ember.'}]},
+        {id:22, code:'GCHEVES1', name:'Kékes alatti fenyőszél', difficulty:'mid', distance:'3.9 km', date:'2022-12-10', status:'Aktív', coords:[47.872,20.010], desc:'Mérsékelt emelkedő a Mátra magasabb erdei között, fenyvesek és hűvös tisztások mentén.', logs:[{author:'hegyilevegő', date:'2026-06-18', status:'Megtaláltam', text:'Fent már egészen más volt a levegő, a fenyvesek között végig jó tempóban lehetett haladni.'},{author:'matrajaro', date:'2026-05-12', status:'Megtaláltam', text:'A rejtek szépen simul a környezetbe, a túra pedig röviden is karakteres.'}]},
+        {id:23, code:'GCHEVES2', name:'Szalajka-völgyi páracsík', difficulty:'easy', distance:'2.7 km', date:'2023-04-08', status:'Aktív', coords:[48.101,20.388], desc:'Könnyű völgyi séta patakmenti hangulattal és hűs, árnyékos szakaszokkal.', logs:[{author:'patakpart', date:'2026-06-17', status:'Megtaláltam', text:'A víz közelsége miatt végig kellemes maradt a séta, családdal is jól járható.'},{author:'fatyolfeny', date:'2026-05-09', status:'Megtaláltam', text:'Rövid, de nagyon szerethető útvonal, a környezet miatt többször is megálltunk.'}]},
+        {id:24, code:'GCHEVES3', name:'Mátrafüredi kilátóív', difficulty:'mid', distance:'4.4 km', date:'2021-07-25', status:'Aktív', coords:[47.858,19.998], desc:'Változatos mátrai kör erdei kanyarokkal és egy nyitottabb kilátószakasszal.', logs:[{author:'ivmenet', date:'2026-06-13', status:'Megtaláltam', text:'Pont annyi emelkedő van benne, hogy élvezetes maradjon, de ne legyen túlzó.'},{author:'szelcsend', date:'2026-04-24', status:'Megtaláltam', text:'A kilátónál pont jókor sütött ki a nap, sokat dobott az egész körön.'}]},
+        {id:25, code:'GCHEVES4', name:'Parádi forrásösvény', difficulty:'easy', distance:'1.8 km', date:'2022-05-29', status:'Aktív', coords:[47.924,20.061], desc:'Rövid erdei séta forrás közeli hangulattal és pihenőhelyekkel.', logs:[{author:'forrashang', date:'2026-06-10', status:'Megtaláltam', text:'Rövid útvonal, de nagyon barátságos, kellemes pihenős pontokkal.'},{author:'arnyekjaro', date:'2026-05-04', status:'Megtaláltam', text:'Gyorsan meglett a doboz, közben pedig jólesett a hűvös erdei rész.'}]},
+        {id:26, code:'GCHEVES5', name:'Benevár-bérc emelkedő', difficulty:'hard', distance:'5.7 km', date:'2021-10-02', status:'Aktív', coords:[47.915,20.037], desc:'Meredekebb mátrai kapaszkodó hosszabb gerincmenettel és szép lejtőoldali nézetekkel.', logs:[{author:'gerincjaro', date:'2026-06-15', status:'Megtaláltam', text:'Az emelkedő rendesen kivett belőlünk, de a gerincen futó szakasz fantasztikus volt.'},{author:'lejtolato', date:'2026-05-14', status:'Megtaláltam', text:'Haladósabb, sportosabb láda, de nagyon jó ritmusban lehet teljesíteni.'}]}
+      ],
+      logs: [
+        {name:'Turul kör', cacheId:1, date:'2026-06-24', status:'Megtalálva', text:'Gyors találat volt, a helyszín szépen megközelíthető.', photo:true, own:true},
+        {name:'Völgyhíd pont', cacheId:2, date:'2026-06-20', status:'Fotó mentve', text:'Készítettem pár képet a környékről és elmentettem.', photo:true, own:true},
+        {name:'Panoráma ösvény', cacheId:3, date:'2026-06-11', status:'Jegyzet', text:'Későbbre jelölve, érdemes lesz visszajönni jobb időben.', photo:false, own:true},
+        {name:'Fényes-forrás titka', cacheId:2, date:'2026-06-20', status:'Fotó mentve', text:'A pallósor mellett most inkább pár hangulatos képet készítettem, és elmentettem ezt a pontot külön is.', photo:true, own:true},
+        {name:'Bazilika panoráma lépcső', cacheId:3, date:'2026-06-18', status:'Megtaláltam', text:'A lépcsős rész után kifejezetten jó panoráma nyílt, gyors, de emlékezetes megálló lett belőle.', photo:false, own:true},
+        {name:'Öreg-tó parti kör', cacheId:5, date:'2026-06-17', status:'Megtaláltam', text:'Rövid tóparti séta volt, de a vízpart és a madarak miatt sokkal jobb lett, mint egy sima kerülő.', photo:true, own:true},
+        {name:'Gerecsei kövek nyoma', cacheId:6, date:'2026-06-16', status:'Jegyzet', text:'A köves részek miatt lassabban haladtam, de a fennsík hangulata miatt mindenképp megérte.', photo:false, own:true},
+        {name:'Monostori-part emlékpont', cacheId:8, date:'2026-06-15', status:'Fotó mentve', text:'A Duna-parti rész most inkább fotózásra vitt rá, végül külön elmentettem ezt a helyet a logjaim közé is.', photo:true, own:true},
+        {name:'Hámori-tó reggeli köre', cacheId:17, date:'2026-06-14', status:'Megtaláltam', text:'Korán érkeztem, a tó szinte teljesen sima volt, ettől az egész hely sokkal nyugodtabb hatást keltett.', photo:true, own:true},
+        {name:'Kékes alatti fenyőszél', cacheId:22, date:'2026-06-18', status:'Megtaláltam', text:'A fenyvesben végig kellemes maradt a levegő, a magasabban fekvő szakasz különösen jól esett.', photo:false, own:true}
+      ],
+      places: [
+        {name:'Parkoló', note:'Kiindulási pont', coords:'47.5848, 18.3969'},
+        {name:'Kilátó', note:'Szép panoráma', coords:'47.5902, 18.4010'}
+      ]
+    };
+
+    const els = {
+      root: document.documentElement,
+      loginScreen: document.getElementById('loginScreen'),
+      loginBtn: document.getElementById('loginBtn'),
+      username: document.getElementById('username'),
+      password: document.getElementById('password'),
+      toast: document.getElementById('toast'),
+      pageTitle: document.getElementById('pageTitle'),
+      quickTheme: document.getElementById('quickTheme'),
+      darkSwitch: document.getElementById('darkSwitch'),
+      fontSizeSelect: document.getElementById('fontSizeSelect'),
+      cacheViewSelect: document.getElementById('cacheViewSelect'),
+      viewModeChip: document.getElementById('viewModeChip'),
+      cacheList: document.getElementById('cacheList'),
+      logList: document.getElementById('logList'),
+      placeList: document.getElementById('placeList'),
+      sortSelect: document.getElementById('sortSelect'),
+      cacheSearch: document.getElementById('cacheSearch'),
+      logoutBtn: document.getElementById('logoutBtn'),
+      searchPanel: document.getElementById('searchPanel'),
+      searchToggle: document.getElementById('searchToggle'),
+      closeSearchBtn: document.getElementById('closeSearchBtn'),
+      logCacheSelect: document.getElementById('logCacheSelect'),
+      cacheSearchPanel: document.getElementById('cacheSearchPanel'),
+      cacheSearchToggle: document.getElementById('cacheSearchToggle'),
+      closeCacheSearchBtn: document.getElementById('closeCacheSearchBtn'),
+      sortSelect: document.getElementById('sortSelect'),
+      sortDirectionBtn: document.getElementById('sortDirectionBtn'),
+      placeNameInput: document.getElementById('placeNameInput'),
+      placeNoteInput: document.getElementById('placeNoteInput'),
+      placeCoordsInput: document.getElementById('placeCoordsInput'),
+      navTargetChip: document.getElementById('navTargetChip'),
+      navTargetName: document.getElementById('navTargetName'),
+      navBearingText: document.getElementById('navBearingText'),
+      navDistanceText: document.getElementById('navDistanceText'),
+      navAccuracyText: document.getElementById('navAccuracyText'),
+      navCurrentCoords: document.getElementById('navCurrentCoords'),
+      navTargetCoords: document.getElementById('navTargetCoords'),
+      compassNeedle: document.getElementById('compassNeedle'),
+      refreshNavBtn: document.getElementById('refreshNavBtn'),
+      backFromNavBtn: document.getElementById('backFromNavBtn')
+    };
+
+    const toast = (msg) => {
+      els.toast.textContent = msg;
+      els.toast.classList.add('show');
+      clearTimeout(window.toastTimer);
+      window.toastTimer = setTimeout(() => els.toast.classList.remove('show'), 1800);
+    };
+
+    const pageLabels = {map:'Térkép', caches:'Ládák', logs:'Logjaim', places:'Saját helyek', settings:'Beállítások', detail:'Láda adatlap', 'write-log':'Új log', 'log-detail':'Log részletei', 'cache-logs':'Láda logok',navigation: 'Navigáció'};
+
+
+      function setPage(page) {
+      state.activePage = page;
+      document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+      document.getElementById(`page-${page}`).classList.add('active');
+      document.querySelectorAll('.nav-btn').forEach(btn => btn.classList.toggle('active', btn.dataset.page === page));
+      els.pageTitle.textContent = pageLabels[page];
+      if (page === 'map' && window.map) setTimeout(() => map.invalidateSize(), 120);
+    }
+
+    function setTheme(theme) {
+      state.theme = theme;
+      els.root.setAttribute('data-theme', theme);
+      els.darkSwitch.classList.toggle('on', theme === 'dark');
+    }
+
+    function setFontSize(size) {
+      state.fontSize = size;
+      els.root.setAttribute('data-font-size', size);
+      els.fontSizeSelect.value = size;
+    }
+
+    function setCacheView(view) {
+      state.cacheView = view;
+      els.cacheViewSelect.value = view;
+      els.viewModeChip.textContent = view === 'list' ? 'Lista nézet' : 'Kártyás nézet';
+      renderCaches();
+    }
+
+    function difficultyLabel(diff) {
+      return diff === 'easy' ? 'Könnyű' : diff === 'mid' ? 'Közepes' : 'Nehéz';
+    }
+
+    function renderCaches() {
+        const term = els.cacheSearch.value ?.toLowerCase() || '';
+      let items = [...state.caches].filter(c => (`${c.code} ${c.name} ${c.status}`).toLowerCase().includes(term));
+      const sort = els.sortSelect.value;
+      const dir = state.sortDirection;
+      items.sort((a,b) => {
+        let result = 0;
+        if (sort === 'name') result = a.name.localeCompare(b.name,'hu');
+        else if (sort === 'date') result = a.date.localeCompare(b.date);
+        else if (sort === 'difficulty') result = a.difficultyRank - b.difficultyRank;
+        else result = parseFloat(a.distance) - parseFloat(b.distance);
+        return dir === 'asc' ? result : -result;
+      });
+      els.cacheList.innerHTML = '';
+      items.forEach(cache => {
+        const row = document.createElement('div');
+        row.className = 'row';
+        if (state.cacheView === 'card') {
+          row.style.gridTemplateColumns = '1fr';
+          row.style.border = '1px solid var(--color-border)';
+          row.style.borderRadius = '18px';
+          row.style.padding = '14px';
+          row.style.background = 'var(--color-surface-offset)';
+        }
+        row.innerHTML = state.cacheView === 'list'
+          ? `<div class="badge ${cache.difficulty}">${cache.code.slice(0,2)}</div><div class="row-main"><strong>${cache.code} – ${cache.name}</strong><span>${cache.distance} • ${difficultyLabel(cache.difficulty)} • ${cache.status}</span><span>Kihelyezve: ${cache.date}</span></div><div class="row-actions"><button class="secondary-btn open-detail">Megnyitás</button></div>`
+          : `<div style="display:grid;gap:10px"><div style="display:flex;justify-content:space-between;gap:8px;align-items:center;flex-wrap:wrap"><strong>${cache.code} – ${cache.name}</strong><span class="chip">${difficultyLabel(cache.difficulty)}</span></div><span class="muted">Távolság: ${cache.distance} • Státusz: ${cache.status}</span><span class="muted">Kihelyezve: ${cache.date}</span><button class="secondary-btn open-detail" style="width:100%">Adatlap megnyitása</button></div>`;
+        row.querySelector('.open-detail').addEventListener('click', () => openDetail(cache));
+        els.cacheList.appendChild(row);
+      });
+    }
+
+    function openLogDetail(index) {
+      const log = state.logs[index];
+      if (!log) return;
+      state.editingLogIndex = index;
+      document.getElementById('logDetailName').textContent = log.name;
+      document.getElementById('logDetailDate').textContent = log.date;
+      document.getElementById('logDetailStatus').textContent = log.status;
+      document.getElementById('logDetailText').textContent = log.text || 'Nincs külön log szöveg.';
+      setPage('log-detail');
+    }
+
+    function openCacheLogs() {
+      const cache = state.caches.find(c => c.id === state.selectedCacheId);
+      if (!cache) return;
+      const ownLogs = state.logs.filter(log => log.cacheId === cache.id).map((log, index) => ({...log, author:'Én', editable:true, ownIndex:index}));
+      const mergedLogs = [...ownLogs, ...cache.logs.map(log => ({...log, editable:false}))];
+      const list = document.getElementById('cacheLogsList');
+      list.innerHTML = '';
+      mergedLogs.forEach(log => {
+        const row = document.createElement('div');
+        row.className = 'row log-entry';
+        row.style.gridTemplateColumns = 'auto 1fr';
+        row.innerHTML = `
+          <div class="badge ${cache.difficulty}">LOG</div>
+          <div>
+            <div style="display:flex;justify-content:space-between;gap:8px;align-items:flex-start;flex-wrap:wrap">
+              <div><strong>${log.author}</strong><span>${log.date} • ${log.status}</span></div>
+              ${log.editable ? '<button class="secondary-btn edit-own-log">Szerkesztés</button>' : '<span class="chip">Minta</span>'}
+            </div>
+            <p class="muted" style="margin-top:6px">${log.text}</p>
+          </div>
+        `;
+        if (log.editable) {
+          row.querySelector('.edit-own-log').addEventListener('click', (e) => {
+            e.stopPropagation();
+            state.editingLogIndex = state.logs.findIndex(item => item.cacheId === cache.id && item.date === log.date && item.text === log.text);
+            const editableLog = state.logs[state.editingLogIndex];
+            if (!editableLog) return;
+            document.getElementById('logCacheSelect').value = editableLog.cacheId;
+            document.getElementById('logStatusSelect').value = editableLog.status;
+            document.getElementById('logMessage').value = editableLog.text || '';
+            setPage('write-log');
+          });
+        }
+        list.appendChild(row);
+      });
+      setPage('cache-logs');
+    }
+
+    function renderLogs() {
+      els.logList.innerHTML = '';
+      const ownLogs = state.logs.map((log, index) => {
+        const cache = state.caches.find(c => c.id === log.cacheId);
+        return {
+          ...log,
+          displayName: cache ? `${cache.code} – ${cache.name}` : log.name,
+          originalIndex: index
+        };
+      }).sort((a, b) => b.date.localeCompare(a.date));
+
+      ownLogs.forEach(log => {
+        const row = document.createElement('div');
+        row.className = 'row log-entry';
+        row.innerHTML = `
+          <div class="badge mid">LOG</div>
+          <div>
+            <div style="display:flex;justify-content:space-between;gap:8px;align-items:flex-start;flex-wrap:wrap">
+              <div><strong>${log.displayName}</strong><span>${log.date} • ${log.status}</span></div>
+              <div class="dist">Megnyitás</div>
+            </div>
+            <div class="log-photo" style="margin-top:8px"></div>
+          </div>
+        `;
+        row.addEventListener('click', () => openLogDetail(log.originalIndex));
+        els.logList.appendChild(row);
+      });
+    }
+
+    function syncPlaceMarkers() {
+      if (window.placeMarkerLayer) window.placeMarkerLayer.clearLayers();
+      window.placeMarkerLayer = L.layerGroup().addTo(map);
+      state.places.forEach(place => {
+        const [lat,lng] = place.coords.split(',').map(v => parseFloat(v.trim()));
+        if (!Number.isNaN(lat) && !Number.isNaN(lng)) {
+          L.marker([lat,lng]).addTo(window.placeMarkerLayer).bindPopup(`<b>${place.name}</b><br>${place.note}`);
+        }
+      });
+    }
+
+    function openPlaceEditor(index = null, presetCoords = '') {
+      state.editingPlaceIndex = index;
+      const place = index !== null ? state.places[index] : {name:'', note:'', coords:presetCoords || `${state.currentPosition[0].toFixed(3)}, ${state.currentPosition[1].toFixed(3)}`};
+      els.placeNameInput.value = place.name;
+      els.placeNoteInput.value = place.note;
+      els.placeCoordsInput.value = place.coords;
+      setPage('place-editor');
+    }
+
+
+    const mapFilterButtons = document.querySelectorAll('[data-filter]');
+
+        function updateMapFilterButtons() {
+          mapFilterButtons.forEach(btn => {
+            const filter = btn.dataset.filter;
+            btn.classList.toggle('active', state.activeMapFilters.includes(filter));
+          });
+        }
+
+        mapFilterButtons.forEach(btn => btn.addEventListener('click', () => {
+          const filter = btn.dataset.filter;
+          let filters = [...state.activeMapFilters];
+
+          if (filter === 'all') {
+            filters = ['all'];
+          } else if (filter === 'places') {
+            if (filters.includes('places')) {
+              filters = filters.filter(f => f !== 'places');
+            } else {
+              filters = filters.filter(f => f !== 'all');
+              filters.push('places');
+            }
+          } else {
+            if (filters.includes(filter)) {
+              filters = filters.filter(f => f !== filter);
+            } else {
+              filters = filters.filter(f => f !== 'all');
+              filters.push(filter);
+            }
+          }
+
+          const difficultyFilters = filters.filter(f => ['easy', 'mid', 'hard'].includes(f));
+
+          if (filters.length === 0) {
+            filters = ['all'];
+          } else if (difficultyFilters.length === 3) {
+            filters = filters.filter(f => !['easy', 'mid', 'hard'].includes(f));
+            filters.unshift('all');
+          }
+
+          state.activeMapFilters = filters;
+          updateMapFilterButtons();
+          syncCacheMarkers();
+        }));
+     
+    function renderPlaces() {
+      els.placeList.innerHTML = '';
+      state.places.forEach((place, index) => {
+        const row = document.createElement('div');
+        row.className = 'row';
+        row.innerHTML = `
+          <div class="badge place">📍</div>
+          <div><strong>${place.name}</strong><span>${place.note} • ${place.coords}</span></div>
+          <div class="row-actions"><button class="pill-btn edit-place-btn">Szerkesztés</button><button class="pill-btn delete-place-btn">Törlés</button></div>
+        `;
+        row.querySelector('.edit-place-btn').addEventListener('click', () => openPlaceEditor(index));
+        row.querySelector('.delete-place-btn').addEventListener('click', () => {
+          state.places.splice(index, 1);
+          renderPlaces();
+          toast('Saját hely törölve.');
+        });
+        els.placeList.appendChild(row);
+      });
+      syncPlaceMarkers();
+    }
+
+    function getMergedCacheLogs(cacheId) {
+      const cache = state.caches.find(c => c.id === cacheId);
+      if (!cache) return [];
+      const ownLogs = state.logs
+        .filter(log => log.cacheId === cacheId)
+        .map(log => ({author:'Én', date:log.date, status:log.status, text:log.text, own:true}));
+      const otherLogs = cache.logs.map(log => ({...log, own:false}));
+      return [...ownLogs, ...otherLogs].sort((a, b) => b.date.localeCompare(a.date));
+    }
+
+    function getCacheLogCount(cacheId) {
+      return getMergedCacheLogs(cacheId).length;
+    }
+
+    function openDetail(cache) {
+      document.getElementById('detailTitle').textContent = `${cache.code} – ${cache.name}`;
+      state.selectedCacheId = cache.id;
+      const mergedLogs = getMergedCacheLogs(cache.id);
+      document.getElementById('detailDesc').textContent = cache.desc;
+      document.getElementById('detailCoord').textContent = `${cache.coords[0]}, ${cache.coords[1]}`;
+      document.getElementById('detailStatus').textContent = `${cache.status} • ${cache.distance} • ${getCacheLogCount(cache.id)} log`;
+      document.getElementById('detailDiffChip').textContent = difficultyLabel(cache.difficulty);
+      document.getElementById('detailLogs').innerHTML = mergedLogs.slice(0,3).map(log => `
+        <div class="row" style="grid-template-columns:auto 1fr;padding:10px 0"><div class="badge ${log.own ? 'place' : cache.difficulty}">✎</div><div><strong>${log.author}</strong><span>${log.date} • ${log.status} • ${log.text}</span></div></div>
+      `).join('');
+      document.getElementById('logCacheSelect').value = cache.id;
+      setPage('detail');
+    }
+
+    const map = L.map('map', {zoomControl:false}).setView(state.currentPosition, 12);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      maxZoom: 19,
+      attribution: '&copy; OpenStreetMap közreműködők'
+    }).addTo(map);
+    L.control.zoom({position:'bottomleft'}).addTo(map);
+
+    function circleColor(diff) {
+      return diff === 'easy' ? '#4c8f6a' : diff === 'mid' ? '#ce7a1f' : '#ad3a59';
+    }
+
+    function cacheMarkerHtml(diff) {
+      const top = '#d08a6b';
+      const base = diff === 'easy' ? '#4c8f6a' : diff === 'mid' ? '#ce7a1f' : '#ad3a59';
+      return `<svg width="34" height="28" viewBox="0 0 64 48" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+        <path d="M10 10h34l10 8H20z" fill="none" stroke="${top}" stroke-width="2.2" stroke-linejoin="round" stroke-linecap="round"/>
+        <path d="M10 10V4h34l10 8v6" fill="none" stroke="${top}" stroke-width="2.2" stroke-linejoin="round" stroke-linecap="round"/>
+        <path d="M44 10V4" fill="none" stroke="${top}" stroke-width="2.2" stroke-linejoin="round" stroke-linecap="round"/>
+        <path d="M20 18h34v16H20z" fill="rgba(255,255,255,0.9)" stroke="${base}" stroke-width="2.4" stroke-linejoin="round" stroke-linecap="round"/>
+        <path d="M10 26h34v16H10z" fill="rgba(255,255,255,0.92)" stroke="${base}" stroke-width="2.4" stroke-linejoin="round" stroke-linecap="round"/>
+        <path d="M20 18l-10 8" fill="none" stroke="${base}" stroke-width="2.4" stroke-linejoin="round" stroke-linecap="round"/>
+        <path d="M44 26l10-8" fill="none" stroke="${base}" stroke-width="2.4" stroke-linejoin="round" stroke-linecap="round"/>
+      </svg>`;
+    }
+
+    const cacheMarkers = new Map();
+    let cacheMarkerLayer = L.layerGroup().addTo(map);
+
+    function buildCacheMarker(cache) {
+      const marker = L.marker(cache.coords, {
+        icon: L.divIcon({
+          className: 'cache-marker-icon',
+          html: cacheMarkerHtml(cache.difficulty),
+          iconSize: [34, 28],
+          iconAnchor: [17, 14],
+          popupAnchor: [0, -10]
+        })
+      });
+
+      marker.addTo(cacheMarkerLayer).bindPopup(
+        `<b class="popup-cache-link" style="cursor:pointer;text-decoration:underline">${cache.code} – ${cache.name}</b><br>${difficultyLabel(cache.difficulty)} • ${cache.distance}`
+      );
+
+      marker.on('popupopen', () => {
+        const link = document.querySelector('.leaflet-popup-content .popup-cache-link');
+        if (!link) return;
+        link.addEventListener('click', () => openDetail(cache), { once: true });
+      });
+
+      return marker;
+    }
+
+    function initCacheMarkers() {
+      cacheMarkers.clear();
+
+      state.caches.forEach(cache => {
+        cacheMarkers.set(cache.id, buildCacheMarker(cache));
+      });
+    }
+
+    function isCacheVisible(cache) {
+      const filters = state.activeMapFilters;
+
+      if (filters.includes('all')) return true;
+      if (filters.includes(cache.difficulty)) return true;
+
+      return false;
+    }
+
+    function syncCacheMarkers() {
+      cacheMarkerLayer.clearLayers();
+
+      if (state.activeMapFilters.includes('places') && state.activeMapFilters.length === 1) {
+        return;
+      }
+
+      state.caches.forEach(cache => {
+        if (!isCacheVisible(cache)) return;
+
+        const marker = cacheMarkers.get(cache.id);
+        if (marker) {
+          marker.addTo(cacheMarkerLayer);
+        }
+      });
+    }
+
+    initCacheMarkers();
+    syncCacheMarkers();
+
+    window.placeMarkerLayer = L.layerGroup().addTo(map);
+    syncPlaceMarkers();
+
+    const userMarker = L.circleMarker(state.currentPosition, {
+      radius: 10, fillColor: '#2679c8', color:'#fff', weight:3, fillOpacity:1
+    }).addTo(map).bindPopup('Aktuális pozíció');
+
+    function locateUser(center = true) {
+      if (!navigator.geolocation) {
+        toast('A böngésző nem támogatja a geolokációt.');
+        return;
+      }
+      navigator.geolocation.getCurrentPosition(pos => {
+        state.currentPosition = [pos.coords.latitude, pos.coords.longitude];
+        userMarker.setLatLng(state.currentPosition);
+        if (center) map.setView(state.currentPosition, 14);
+        toast('Pozíció frissítve.');
+      }, () => {
+        map.setView(state.currentPosition, 13);
+        toast('GPS engedély hiányzik, minta pozíció maradt.');
+      }, {enableHighAccuracy:true, timeout:5000});
+    }
+
+    document.querySelectorAll('.nav-btn').forEach(btn => btn.addEventListener('click', () => setPage(btn.dataset.page)));
+    els.loginBtn.addEventListener('click', () => {
+      state.user = {name: els.username.value || 'Teszt felhasználó'};
+      els.loginScreen.classList.add('hidden');
+      toast(`Sikeres belépés: ${state.user.name}`);
+      setTimeout(() => map.invalidateSize(), 120);
+    });
+    document.getElementById('quickTheme').addEventListener('click', () => setTheme(state.theme === 'dark' ? 'light' : 'dark'));
+    els.darkSwitch.addEventListener('click', () => setTheme(state.theme === 'dark' ? 'light' : 'dark'));
+    els.fontSizeSelect.addEventListener('change', e => setFontSize(e.target.value));
+    els.cacheViewSelect.addEventListener('change', e => setCacheView(e.target.value));
+    document.getElementById('toggleViewBtn').addEventListener('click', () => setCacheView(state.cacheView === 'list' ? 'card' : 'list'));
+    els.cacheSearchToggle.addEventListener('click', () => {
+      els.cacheSearchPanel.classList.toggle('hidden');
+      if (!els.cacheSearchPanel.classList.contains('hidden')) els.cacheSearch.focus();
+    });
+    els.closeCacheSearchBtn.addEventListener('click', () => els.cacheSearchPanel.classList.add('hidden'));
+    function updateSortButtons() {
+      els.sortDirectionBtn.textContent = state.sortDirection === 'asc' ? '↑' : '↓';
+    }
+    els.sortSelect.addEventListener('change', renderCaches);
+    els.sortDirectionBtn.addEventListener('click', () => {
+      state.sortDirection = state.sortDirection === 'asc' ? 'desc' : 'asc';
+      updateSortButtons();
+      renderCaches();
+    });
+    els.cacheSearch.addEventListener('input', renderCaches);
+    document.getElementById('backToListBtn').addEventListener('click', () => setPage('caches'));
+    document.getElementById('foundBtn').addEventListener('click', () => toast('Megtaláltam log rögzítve (minta).'));
+    document.getElementById('saveLaterBtn').addEventListener('click', () => toast('Láda elmentve későbbre.'));
+    document.getElementById('navigateBtn').addEventListener('click', () => {
+      startNavigationTracking();
+      updateNavigationView();
+      setPage('navigation');
+    });
+    document.getElementById('refreshNavBtn').addEventListener('click', () => {
+      locateUser(false);
+      updateNavigationView();
+    });
+
+    document.getElementById('backFromNavBtn').addEventListener('click', () => {
+      setPage('detail');
+    });
+    document.getElementById('newLogBtn').addEventListener('click', () => toast('Új log űrlap a következő verzióban.'));
+    document.getElementById('saveGpsPlaceBtn').addEventListener('click', () => {
+      const coords = `${state.currentPosition[0].toFixed(3)}, ${state.currentPosition[1].toFixed(3)}`;
+      openPlaceEditor(null, coords);
+    });
+    document.getElementById('addManualPlaceBtn').addEventListener('click', () => openPlaceEditor(null, ''));
+    document.getElementById('savePlaceBtn').addEventListener('click', () => {
+      const place = {
+        name: els.placeNameInput.value || 'Új hely',
+        note: els.placeNoteInput.value || 'Saját mentett pont',
+        coords: els.placeCoordsInput.value || `${state.currentPosition[0].toFixed(3)}, ${state.currentPosition[1].toFixed(3)}`
+      };
+      if (state.editingPlaceIndex !== null) {
+        state.places[state.editingPlaceIndex] = place;
+        toast('Saját hely módosítva.');
+      } else {
+        state.places.unshift(place);
+        toast('Új saját hely mentve.');
+      }
+      state.editingPlaceIndex = null;
+      renderPlaces();
+      setPage('places');
+    });
+    document.getElementById('cancelPlaceBtn').addEventListener('click', () => {
+      state.editingPlaceIndex = null;
+      setPage('places');
+    });
+    document.getElementById('nearBtn').addEventListener('click', () => { locateUser(true); setPage('map'); });
+    document.getElementById('locateBtn').addEventListener('click', () => locateUser(true));
+    document.getElementById('followBtn').addEventListener('click', (e) => {
+      state.followGps = !state.followGps;
+      e.currentTarget.textContent = state.followGps ? 'GPS ✓' : 'GPS';
+      toast(state.followGps ? 'GPS követés bekapcsolva.' : 'GPS követés kikapcsolva.');
+    });
+    document.getElementById('filterBtn').addEventListener('click', () => toast('Szűrőpanel a következő verzióban.'));
+    document.getElementById('logoutBtn').addEventListener('click', () => {
+      els.loginScreen.classList.remove('hidden');
+      setPage('map');
+      toast('Kijelentkezve.');
+    });
+
+    function renderLogCacheOptions() {
+      els.logCacheSelect.innerHTML = state.caches.map(cache => `<option value="${cache.id}">${cache.code} – ${cache.name}</option>`).join('');
+    }
+
+    els.searchToggle.addEventListener('click', () => {
+      els.searchPanel.classList.toggle('hidden');
+      if (!els.searchPanel.classList.contains('hidden')) document.getElementById('mapSearch').focus();
+    });
+    els.closeSearchBtn.addEventListener('click', () => els.searchPanel.classList.add('hidden'));
+    function prepareNewLog(cacheId = state.selectedCacheId) {
+      state.editingLogIndex = null;
+      document.getElementById('logCacheSelect').value = cacheId;
+      document.getElementById('logStatusSelect').value = 'Megtaláltam';
+      document.getElementById('logMessage').value = '';
+    }
+    document.getElementById('writeLogBtn').addEventListener('click', () => {
+      prepareNewLog();
+      setPage('write-log');
+    });
+    document.getElementById('newLogBtn').addEventListener('click', () => {
+      prepareNewLog();
+      setPage('write-log');
+    });
+    document.getElementById('cancelLogBtn').addEventListener('click', () => setPage(state.editingLogIndex === null ? 'detail' : 'log-detail'));
+    document.getElementById('attachPhotoBtn').addEventListener('click', () => toast('Fotó csatolás minta funkció.'));
+    document.getElementById('backToLogsBtn').addEventListener('click', () => setPage('logs'));
+    document.getElementById('editLogBtn').addEventListener('click', () => {
+      const log = state.logs[state.editingLogIndex];
+      if (!log) return;
+      document.getElementById('logStatusSelect').value = log.status;
+      document.getElementById('logMessage').value = log.text || '';
+      if (log.cacheId) document.getElementById('logCacheSelect').value = log.cacheId;
+      setPage('write-log');
+    });
+    document.getElementById('allCacheLogsBtn').addEventListener('click', openCacheLogs);
+    document.getElementById('backToDetailBtn').addEventListener('click', () => setPage('detail'));
+
+    function buildUniqueSampleLog(cache, status) {
+      const intros = ['Korán érkeztem', 'Délutáni kerülőként ugrottam be', 'Egy rövidebb séta végén értem ide', 'Ma végre sort kerítettem rá', 'Útközben álltam meg ennél a pontnál', 'Kellemes tempóban jöttem végig'];
+      const middles = ['a rejtek gyorsan meglett', 'kicsit keresni kellett, de logikus helyen volt', 'a környék sokkal hangulatosabb volt, mint vártam', 'meglepően nyugodt volt a környezet', 'a helyszín kifejezetten jó benyomást tett', 'a pont környezete miatt megérte kitérni'];
+      const endings = ['száraz volt a láda és rendben találtam.', 'készítettem pár képet, mielőtt továbbindultam.', 'a végén még maradtam pár percet nézelődni.', 'jó kis megálló lett ebből a mai napra.', 'ide biztosan visszanéznék másik évszakban is.', 'összességében szerethető és jól eltalált pont.'];
+      const statusHints = {
+        'Megtaláltam': 'Sikeres találat lett belőle,',
+        'Elmentem későbbre': 'Most csak felmértem a helyet,',
+        'Fotó mentve': 'A doboznál főleg a környéket fotóztam,',
+        'Megjegyzés': 'Jegyzetként felírtam, hogy'
+      };
+      const base = `${intros[Math.floor(Math.random()*intros.length)]}, ${middles[Math.floor(Math.random()*middles.length)]}; ${statusHints[status] || 'A végén úgy éreztem, hogy'} ${endings[Math.floor(Math.random()*endings.length)]}`;
+      const cacheTail = cache ? ` (${cache.code} – ${cache.name})` : '';
+      return `${base}${cacheTail}`;
+    }
+      function toRad(deg) {
+      return deg * Math.PI / 180;
+    }
+
+    function toDeg(rad) {
+      return rad * 180 / Math.PI;
+    }
+
+    function haversineDistance(from, to) {
+      const R = 6371000;
+      const dLat = toRad(to[0] - from[0]);
+      const dLng = toRad(to[1] - from[1]);
+      const lat1 = toRad(from[0]);
+      const lat2 = toRad(to[0]);
+
+      const a = Math.sin(dLat/2) ** 2 +
+                Math.cos(lat1) * Math.cos(lat2) * Math.sin(dLng/2) ** 2;
+      const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+      return R * c;
+    }
+
+    function calculateBearing(from, to) {
+      const lat1 = toRad(from[0]);
+      const lat2 = toRad(to[0]);
+      const dLng = toRad(to[1] - from[1]);
+
+      const y = Math.sin(dLng) * Math.cos(lat2);
+      const x = Math.cos(lat1) * Math.sin(lat2) -
+                Math.sin(lat1) * Math.cos(lat2) * Math.cos(dLng);
+
+      return (toDeg(Math.atan2(y, x)) + 360) % 360;
+    }
+
+    function bearingToText(bearing) {
+      const dirs = ['É', 'ÉK', 'K', 'DK', 'D', 'DNY', 'NY', 'ÉNY'];
+      return dirs[Math.round(bearing / 45) % 8];
+    }
+
+    function formatDistance(meters) {
+      if (meters < 1000) return `${Math.round(meters)} m`;
+      return `${(meters / 1000).toFixed(2)} km`;
+    }
+    function updateNavigationView() {
+      const cache = state.caches.find(c => c.id === state.selectedCacheId);
+      if (!cache) return;
+
+      const target = cache.coords;
+      const current = state.currentPosition;
+      const distance = haversineDistance(current, target);
+      const bearing = calculateBearing(current, target);
+      const directionLabel = bearingToText(bearing);
+
+      els.navTargetChip.textContent = difficultyLabel(cache.difficulty);
+      els.navTargetName.textContent = `${cache.code} – ${cache.name}`;
+      els.navBearingText.textContent = `${directionLabel} • ${Math.round(bearing)}°`;
+      els.navDistanceText.textContent = formatDistance(distance);
+      els.navAccuracyText.textContent = state.gpsAccuracy != null
+        ? `kb. ±${Math.round(state.gpsAccuracy)} m`
+        : 'Nincs GPS pontossági adat';
+      els.navCurrentCoords.textContent = `${current[0].toFixed(5)}, ${current[1].toFixed(5)}`;
+      els.navTargetCoords.textContent = `${target[0].toFixed(5)}, ${target[1].toFixed(5)}`;
+
+      const heading = state.deviceHeading ?? 0;
+      const relative = bearing - heading;
+      els.compassNeedle.style.transform = `translate(-50%,-85%) rotate(${relative}deg)`;
+    }
+      function startNavigationTracking() {
+          if (!navigator.geolocation) {
+            toast('A böngésző nem támogatja a geolokációt.');
+            return;
+          }
+
+          if (state.navigationWatchId !== null) {
+            navigator.geolocation.clearWatch(state.navigationWatchId);
+          }
+
+          state.navigationWatchId = navigator.geolocation.watchPosition(
+            pos => {
+              state.currentPosition = [pos.coords.latitude, pos.coords.longitude];
+              state.gpsAccuracy = pos.coords.accuracy ?? null;
+              userMarker.setLatLng(state.currentPosition);
+              updateNavigationView();
+            },
+            () => {
+              toast('Nem sikerült a GPS követés.');
+              updateNavigationView();
+            },
+            { enableHighAccuracy: true, maximumAge: 1000, timeout: 10000 }
+          );
+        }
+              function handleOrientation(event) {
+          let heading = null;
+
+          if (typeof event.webkitCompassHeading === 'number') {
+            heading = event.webkitCompassHeading;
+          } else if (event.alpha != null) {
+            heading = 360 - event.alpha;
+          }
+
+          if (heading != null && !Number.isNaN(heading)) {
+            state.deviceHeading = heading;
+            updateNavigationView();
+          }
+        }
+
+        window.addEventListener('deviceorientationabsolute', handleOrientation, true);
+        window.addEventListener('deviceorientation', handleOrientation, true);
+
+    document.getElementById('saveLogBtn').addEventListener('click', () => {
+      const cacheId = Number(document.getElementById('logCacheSelect').value);
+      const cache = state.caches.find(c => c.id === cacheId);
+      const status = document.getElementById('logStatusSelect').value;
+      const rawText = document.getElementById('logMessage').value.trim();
+      const text = rawText || buildUniqueSampleLog(cache, status);
+      if (state.editingLogIndex !== null) {
+        state.logs[state.editingLogIndex] = {
+          ...state.logs[state.editingLogIndex],
+          cacheId,
+          name: cache ? cache.name : state.logs[state.editingLogIndex].name,
+          status,
+          text
+        };
+        toast('Log módosítva.');
+      } else {
+        state.logs.unshift({name: cache ? cache.name : 'Ismeretlen láda', cacheId, date: '2026-06-25', status, text, photo:true, own:true});
+        toast('Új log elmentve a mintalistába.');
+      }
+      renderLogs();
+      if (state.selectedCacheId === cacheId) {
+        openDetail(cache);
+      } else {
+        setPage('logs');
+      }
+    });
+
+    renderCaches();
+    renderLogs();
+    renderPlaces();
+    renderLogCacheOptions();
+    updateSortButtons();
+    setTheme('light');
+    setFontSize('medium');
+    setCacheView('list');
+  </script>
+</body>
+</html>
