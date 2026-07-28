@@ -309,7 +309,7 @@
       </div>
     </section>
 
-    <div class="statusbar"><span>11:29</span><span>4G • GPS • 82%</span></div>
+    <div class="statusbar"><span id="statusTime">--:--</span><span>4G • GPS • 82%</span></div>
     <header class="topbar">
       <div>
         <p>Geoládák 2.0</p>
@@ -1285,8 +1285,22 @@
           }
         }
 
-        window.addEventListener('deviceorientationabsolute', handleOrientation, true);
-        window.addEventListener('deviceorientation', handleOrientation, true);
+      window.addEventListener('deviceorientationabsolute', handleOrientation, true);
+      window.addEventListener('deviceorientation', handleOrientation, true);
+
+      function updateStatusTime() {
+          const el = document.getElementById('statusTime');
+          if (!el) return;
+
+          const now = new Date();
+          el.textContent = now.toLocaleTimeString('hu-HU', {
+            hour: '2-digit',
+            minute: '2-digit'
+          });
+        }
+
+        updateStatusTime();
+        setInterval(updateStatusTime, 1000);
 
     document.getElementById('saveLogBtn').addEventListener('click', () => {
       const cacheId = Number(document.getElementById('logCacheSelect').value);
