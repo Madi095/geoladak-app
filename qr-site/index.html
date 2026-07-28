@@ -9,16 +9,15 @@
     <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
     <style>
         :root {
-            --bg-1: #fff8fb;
-            --bg-2: #f7e8ee;
-            --card: #fffafc;
-            --text: #4b2437;
-            --muted: #8a5b6d;
-            --accent: #cf6f95;
-            --accent-2: #f1b8ca;
-            --gold: #d8b36a;
-            --shadow: 0 20px 60px rgba(105,49,73,.18);
-            --radius: 28px;
+            --bg: #fff7fb;
+            --bg-soft: #f8e6ef;
+            --card: rgba(255,255,255,.68);
+            --text: #4a2435;
+            --muted: #8b5f71;
+            --accent: #d16f98;
+            --gold: #d8b26c;
+            --shadow: 0 24px 70px rgba(97,41,67,.18);
+            --radius: 30px;
         }
 
         * {
@@ -30,57 +29,105 @@
             min-height: 100vh;
             font-family: Inter,system-ui,sans-serif;
             color: var(--text);
-            background: radial-gradient(circle at top left, rgba(255,255,255,.8), transparent 34%), radial-gradient(circle at bottom right, rgba(255,214,229,.8), transparent 28%), linear-gradient(160deg, var(--bg-1), var(--bg-2));
+            background: radial-gradient(circle at top left, rgba(255,255,255,.85), transparent 30%), radial-gradient(circle at bottom right, rgba(255,216,231,.9), transparent 32%), linear-gradient(160deg, var(--bg), var(--bg-soft));
             overflow-x: hidden;
         }
 
         .page {
             min-height: 100vh;
+            padding: 26px 18px 40px;
             display: grid;
             place-items: center;
-            padding: 32px 18px 48px;
             position: relative;
-            isolation: isolate;
         }
 
-        .sparkles::before,
-        .sparkles::after {
-            content: "";
-            position: absolute;
-            inset: 0;
-            pointer-events: none;
-            background-image: radial-gradient(circle, rgba(255,255,255,.8) 0 2px, transparent 3px), radial-gradient(circle, rgba(255,255,255,.5) 0 1px, transparent 2px);
-            background-size: 180px 180px, 120px 120px;
-            background-position: 0 0, 50px 30px;
-            opacity: .35;
-            z-index: -1;
-        }
+            .page::before {
+                content: "";
+                position: absolute;
+                inset: 0;
+                pointer-events: none;
+                background-image: radial-gradient(circle, rgba(255,255,255,.75) 0 2px, transparent 2.5px), radial-gradient(circle, rgba(255,255,255,.45) 0 1px, transparent 2px);
+                background-size: 170px 170px, 120px 120px;
+                background-position: 0 0, 40px 60px;
+                opacity: .4;
+            }
 
-        .card {
-            width: min(100%, 980px);
-            background: rgba(255,250,252,.72);
-            border: 1px solid rgba(255,255,255,.65);
+        .frame {
+            width: min(100%, 1140px);
+            background: var(--card);
+            border: 1px solid rgba(255,255,255,.72);
             backdrop-filter: blur(18px);
             border-radius: var(--radius);
             box-shadow: var(--shadow);
-            padding: 28px;
+            padding: 24px;
             position: relative;
+            z-index: 1;
         }
 
-        .grid {
+        .layout {
             display: grid;
             grid-template-columns: repeat(12,1fr);
             gap: 16px;
             align-items: center;
         }
 
+        .hero {
+            grid-column: 4 / span 6;
+            text-align: center;
+            padding: 12px 8px;
+        }
+
+        .eyebrow {
+            text-transform: uppercase;
+            letter-spacing: .28em;
+            font-size: .78rem;
+            color: var(--muted);
+            margin-bottom: 14px;
+        }
+
+        h1 {
+            margin: 0;
+            font-family: "Cormorant Garamond", serif;
+            font-size: clamp(3.2rem, 6.2vw, 6rem);
+            line-height: .94;
+            text-wrap: balance;
+        }
+
+        .divider {
+            width: 118px;
+            height: 2px;
+            margin: 22px auto;
+            background: linear-gradient(90deg, transparent, var(--gold), transparent);
+        }
+
+        .sub {
+            margin: 0 auto;
+            max-width: 34ch;
+            font-size: 1.05rem;
+            line-height: 1.75;
+            color: var(--muted);
+        }
+
+        .ring {
+            width: 78px;
+            height: 78px;
+            margin: 24px auto 0;
+            border-radius: 50%;
+            display: grid;
+            place-items: center;
+            background: linear-gradient(145deg, rgba(255,255,255,.92), rgba(255,231,239,.9));
+            box-shadow: 0 12px 28px rgba(105,47,73,.14);
+            font-size: 1.8rem;
+        }
+
         .photo {
             border-radius: 24px;
             overflow: hidden;
-            min-height: 170px;
-            box-shadow: 0 14px 36px rgba(73,29,50,.14);
-            border: 4px solid rgba(255,255,255,.75);
-            background: #f5dfe7;
+            position: relative;
+            border: 4px solid rgba(255,255,255,.78);
+            box-shadow: 0 16px 36px rgba(72,30,49,.16);
+            min-height: 185px;
+            background: #f0dfe6;
         }
 
             .photo img {
@@ -90,149 +137,125 @@
                 display: block;
             }
 
-        .p1 {
+            .photo::after {
+                content: "";
+                position: absolute;
+                inset: auto 0 0;
+                height: 42%;
+                background: linear-gradient(to top, rgba(0,0,0,.12), transparent);
+                pointer-events: none;
+            }
+
+        .a {
             grid-column: 1 / span 3;
-            transform: translateY(-8px) rotate(-3deg);
+            transform: rotate(-4deg) translateY(-6px);
         }
 
-        .p2 {
+        .b {
             grid-column: 10 / span 3;
-            transform: translateY(-10px) rotate(3deg);
+            transform: rotate(4deg) translateY(-8px);
         }
 
-        .p3 {
+        .c {
             grid-column: 1 / span 3;
-            transform: translateY(8px) rotate(2deg);
+            transform: rotate(3deg) translateY(8px);
         }
 
-        .p4 {
+        .d {
             grid-column: 10 / span 3;
-            transform: translateY(12px) rotate(-2deg);
+            transform: rotate(-3deg) translateY(10px);
         }
 
-        .hero {
-            grid-column: 4 / span 6;
+        .e {
+            grid-column: 2 / span 3;
+            transform: rotate(-2deg);
+        }
+
+        .f {
+            grid-column: 8 / span 3;
+            transform: rotate(2deg);
+        }
+
+        .note {
             text-align: center;
-            padding: 22px 10px;
-        }
-
-        .kicker {
-            letter-spacing: .28em;
-            text-transform: uppercase;
-            font-size: .78rem;
             color: var(--muted);
-            margin-bottom: 14px;
-        }
-
-        h1 {
-            margin: 0;
-            font-family: "Cormorant Garamond", serif;
-            font-size: clamp(3rem, 6vw, 5.6rem);
-            line-height: .95;
-            color: var(--text);
-            text-shadow: 0 1px 0 rgba(255,255,255,.65);
-        }
-
-        .line {
-            width: 110px;
-            height: 2px;
-            background: linear-gradient(90deg, transparent, var(--gold), transparent);
-            margin: 24px auto;
-        }
-
-        .subtitle {
-            margin: 0 auto;
-            max-width: 34ch;
-            color: var(--muted);
-            font-size: 1.05rem;
-            line-height: 1.7;
-        }
-
-        .heart {
-            width: 74px;
-            height: 74px;
-            margin: 22px auto 0;
-            border-radius: 50%;
-            display: grid;
-            place-items: center;
-            background: linear-gradient(145deg, rgba(255,255,255,.9), rgba(255,226,236,.92));
-            box-shadow: 0 10px 28px rgba(112,46,74,.14);
-            font-size: 1.7rem;
-        }
-
-        .footer-note {
-            text-align: center;
-            margin-top: 22px;
-            color: var(--muted);
+            margin-top: 20px;
             font-size: .95rem;
         }
 
-        @media (max-width: 820px) {
-            .card {
-                padding: 20px
-            }
-
-            .grid {
-                grid-template-columns: 1fr 1fr;
+        @media (max-width: 920px) {
+            .layout {
+                grid-template-columns: repeat(2,1fr)
             }
 
             .hero {
                 grid-column: 1 / -1;
                 order: -1;
-                padding: 6px 6px 18px;
+                padding-bottom: 14px
             }
 
-            .p1, .p2, .p3, .p4 {
+            .a, .b, .c, .d, .e, .f {
                 grid-column: auto;
-                transform: none;
-                min-height: 180px;
+                transform: none
             }
         }
 
-        @media (max-width: 520px) {
-            .grid {
-                grid-template-columns: 1fr;
+        @media (max-width: 560px) {
+            .frame {
+                padding: 18px
+            }
+
+            .layout {
+                grid-template-columns: 1fr
             }
 
             .photo {
-                min-height: 190px
+                min-height: 220px
             }
 
             h1 {
-                font-size: clamp(2.6rem, 12vw, 4rem)
+                font-size: clamp(2.8rem, 13vw, 4.2rem)
             }
 
-            .subtitle {
+            .sub {
                 font-size: 1rem
             }
         }
     </style>
 </head>
 <body>
-    <main class="page sparkles">
-        <section class="card">
-            <div class="grid">
-                <figure class="photo p1">
-                    <img src="https://pplx-res.cloudinary.com/image/upload/pplx_search_images/390307545a70939ad41c02ead82dfdfe07b463a0.jpg" alt="Romantikus rózsafüzér fények" width="750" height="750" loading="lazy">
+    <main class="page">
+        <section class="frame">
+            <div class="layout">
+                <figure class="photo a">
+                    <img src="755864556_1374618957973309_4850035632402350790_n.jpg" alt="Közös emlék portré egy itallal az asztalnál" width="768" height="1024" loading="lazy">
                 </figure>
+                <figure class="photo b">
+                    <img src="755666939_1354747596148047_4705887858157765338_n.jpg" alt="Közös fotó kilátással egy üvegkupola alatt" width="768" height="1024" loading="lazy">
+                </figure>
+
                 <div class="hero">
-                    <div class="kicker">Egy különleges kérdés</div>
+                    <div class="eyebrow">Nekünk szól</div>
                     <h1>Hozzám jössz<br>feleségül?</h1>
-                    <div class="line"></div>
-                    <p class="subtitle">Egyelőre teszt, álomszerű képekkel körülölelve — később ide jöhetnek a közös emlékeitek, a kedvenc fotóitok és az igazi pillanat.</p>
-                    <div class="heart">💍</div>
+                    <div class="divider"></div>
+                    <p class="sub">A legszebb közös pillanatainkkal körülvéve szeretném feltenni neked ezt az egyetlen, igazán fontos kérdést.</p>
+                    <div class="ring">💍</div>
                 </div>
-                <figure class="photo p2">
-                    <img src="https://pplx-res.cloudinary.com/image/upload/pplx_search_images/834458bd7aca70ad2eb3949075f7103c6464c504.jpg" alt="Virág mellett eljegyzési gyűrű" width="688" height="862" loading="lazy">
+
+                <figure class="photo c">
+                    <img src="757697831_1588997409256875_3118970206867850508_n.jpg" alt="Közös szelfi esti városi háttérrel" width="768" height="1024" loading="lazy">
                 </figure>
-                <figure class="photo p3">
-                    <img src="https://pplx-res.cloudinary.com/image/upload/pplx_search_images/95d8d3bebea11cbcb535f31a2ed5d2f115084821.jpg" alt="Romantikus naplementés jelenet virágok között" width="512" height="512" loading="lazy">
+                <figure class="photo d">
+                    <img src="758386142_2206334196766565_6353911892250742529_n.jpg" alt="Mosolygós portré éttermi asztalnál" width="768" height="1024" loading="lazy">
                 </figure>
-                <figure class="photo p4">
-                    <img src="https://pplx-res.cloudinary.com/image/upload/pplx_search_images/ff0abe9a02bf227ab0ec3d0624801d1f5aa474d4.jpg" alt="Virágos, álomszerű romantikus páros jelenet" width="3593" height="1960" loading="lazy">
+                <figure class="photo e">
+                    <img src="755151759_2058854474731562_1120972946395108901_n.jpg" alt="Közös naplementés fotó a vízparton" width="768" height="1024" loading="lazy">
+                </figure>
+                <figure class="photo f">
+                    <img src="756219205_1694211411694329_8332223703575064966_n.jpg" alt="Otthoni, kedves portré egy Harry Potter pulóverben" width="768" height="1024" loading="lazy">
                 </figure>
             </div>
-            <p class="footer-note">A QR-kód majd erre a külön oldalra mutathat.</p>
+            <p class="note">Ez az oldal külön linkre tehető, és a QR-kód közvetlenül ide mutathat.</p>
         </section>
     </main>
 </body>
